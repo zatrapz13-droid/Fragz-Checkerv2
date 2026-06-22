@@ -1,4 +1,12 @@
-"dependencies": {
-  "discord.js": "^14.15.2",
-  "express": "^4.18.2"
+{
+  "name": "fragz-tracker",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.15.2",
+    "express": "^4.18.2"
+  }
 }
