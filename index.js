@@ -1,5 +1,4 @@
-require("dotenv").config();
-const { Client, GatewayIntentBits } = require("discord.js");
+const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 
 const client = new Client({
   intents: [
@@ -9,23 +8,45 @@ const client = new Client({
   ]
 });
 
-// In-memory database (upgrade later to Postgres if you want)
+// in-memory database (upgrade to PostgreSQL later)
 let accounts = [];
 
 client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}`);
 });
 
+// HELP MENU
+function helpEmbed() {
+  return new EmbedBuilder()
+    .setTitle("🌸 Fragz Tracker Bot")
+    .setColor(0xff4fd8)
+    .setDescription(`
+Commands:
+
+!add name
+!update name steam:yes psn:no xbox:yes
+!check name
+!list
+!export
+    `);
+}
+
 // ADD ACCOUNT
-// !add name
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   const args = message.content.split(" ");
 
+  // HELP
+  if (message.content === "!help") {
+    return message.reply({ embeds: [helpEmbed()] });
+  }
+
   // ADD
   if (args[0] === "!add") {
     const name = args[1];
+
+    if (!name) return message.reply("Usage: !add name");
 
     accounts.push({
       name,
@@ -34,11 +55,10 @@ client.on("messageCreate", async (message) => {
       xbox: "unknown"
     });
 
-    return message.reply(`Account **${name}** added ✅`);
+    return message.reply(`Added **${name}** ✅`);
   }
 
-  // UPDATE PLATFORM STATUS
-  // !update name steam:yes psn:no xbox:yes
+  // UPDATE
   if (args[0] === "!update") {
     const name = args[1];
 
@@ -52,55 +72,53 @@ client.on("messageCreate", async (message) => {
       }
     });
 
-    return message.reply(`Account **${name}** updated ✅`);
+    return message.reply(`Updated **${name}** ✅`);
   }
 
-  // LIST
-  if (message.content === "!list") {
-    if (!accounts.length) return message.reply("No accounts saved.");
-
-    let out = "🌸 FRAGZ TRACKER LIST\n\n";
-
-    accounts.forEach(a => {
-      out += `
-${a.name}
-Steam: ${a.steam}
-PSN: ${a.psn}
-Xbox: ${a.xbox}
--------------------
-`;
-    });
-
-    return message.reply(out);
-  }
-
-  // CHECK (clean formatted view)
+  // CHECK (EMBED UI)
   if (args[0] === "!check") {
     const name = args[1];
 
     const acc = accounts.find(a => a.name === name);
     if (!acc) return message.reply("Account not found ❌");
 
-    return message.reply(`
-🌸 ACCOUNT STATUS
+    const embed = new EmbedBuilder()
+      .setTitle(`🌸 Account: ${acc.name}`)
+      .setColor(0xff4fd8)
+      .addFields(
+        { name: "Steam", value: acc.steam, inline: true },
+        { name: "PSN", value: acc.psn, inline: true },
+        { name: "Xbox", value: acc.xbox, inline: true }
+      );
 
-Name: ${acc.name}
-
-Steam → ${acc.steam}
-PSN → ${acc.psn}
-Xbox → ${acc.xbox}
-`);
+    return message.reply({ embeds: [embed] });
   }
 
-  // EXPORT READY ACCOUNTS
-  if (message.content === "!export") {
-    let out = "EXPORT LIST 🌸\n\n";
+  // LIST
+  if (message.content === "!list") {
+    if (!accounts.length) return message.reply("No accounts stored.");
+
+    let desc = "";
 
     accounts.forEach(a => {
-      out += `${a.name} | Steam:${a.steam} | PSN:${a.psn} | Xbox:${a.xbox}\n`;
+      desc += `**${a.name}** | Steam:${a.steam} | PSN:${a.psn} | Xbox:${a.xbox}\n`;
     });
 
-    return message.reply(out || "No data.");
+    const embed = new EmbedBuilder()
+      .setTitle("📋 All Accounts")
+      .setColor(0xff4fd8)
+      .setDescription(desc);
+
+    return message.reply({ embeds: [embed] });
+  }
+
+  // EXPORT
+  if (message.content === "!export") {
+    let output = accounts
+      .map(a => `${a.name} | Steam:${a.steam} | PSN:${a.psn} | Xbox:${a.xbox}`)
+      .join("\n");
+
+    return message.reply("```" + output + "```");
   }
 });
 
